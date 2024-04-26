@@ -3,13 +3,11 @@ package migrate
 import (
 	"fmt"
 	"runtime"
-
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var globalMigrate = NewMigrate(nil)
 
-func internalRegister(up, down MigrationFunc, skip int) error {
+func internalRegister(up, down MigrationFn, skip int) error {
 	_, file, _, _ := runtime.Caller(skip)
 	version, description, err := extractVersionDescription(file)
 	if err != nil {
@@ -34,39 +32,39 @@ func internalRegister(up, down MigrationFunc, skip int) error {
 //
 // - Use the following template inside:
 //
-//  package migrations
+//	 package migrations
 //
-//  import (
-// 	 "go.mongodb.org/mongo-driver/bson"
-// 	 "go.mongodb.org/mongo-driver/mongo"
-// 	 "go.mongodb.org/mongo-driver/mongo/options"
-// 	 "github.com/xakep666/mongo-migrate"
-//  )
+//	 import (
+//		 "go.mongodb.org/mongo-driver/bson"
+//		 "go.mongodb.org/mongo-driver/mongo"
+//		 "go.mongodb.org/mongo-driver/mongo/options"
+//		 "github.com/xakep666/mongo-migrate"
+//	 )
 //
-//  func init() {
-// 	 Register(func(db *mongo.Database) error {
-// 	 	 opt := options.Index().SetName("my-index")
-// 	 	 keys := bson.D{{"my-key", 1}}
-// 	 	 model := mongo.IndexModel{Keys: keys, Options: opt}
-// 	 	 _, err := db.Collection("my-coll").Indexes().CreateOne(context.TODO(), model)
-// 	 	 if err != nil {
-// 	 		 return err
-// 	 	 }
-// 	 	 return nil
-// 	 }, func(db *mongo.Database) error {
-// 	 	 _, err := db.Collection("my-coll").Indexes().DropOne(context.TODO(), "my-index")
-// 	 	 if err != nil {
-// 	 		 return err
-// 	 	 }
-// 	 	 return nil
-// 	 })
-//  }
-func Register(up, down MigrationFunc) error {
+//	 func init() {
+//		 Register(func(db *mongo.Database) error {
+//		 	 opt := options.Index().SetName("my-index")
+//		 	 keys := bson.D{{"my-key", 1}}
+//		 	 model := mongo.IndexModel{Keys: keys, Options: opt}
+//		 	 _, err := db.Collection("my-coll").Indexes().CreateOne(context.TODO(), model)
+//		 	 if err != nil {
+//		 		 return err
+//		 	 }
+//		 	 return nil
+//		 }, func(db *mongo.Database) error {
+//		 	 _, err := db.Collection("my-coll").Indexes().DropOne(context.TODO(), "my-index")
+//		 	 if err != nil {
+//		 		 return err
+//		 	 }
+//		 	 return nil
+//		 })
+//	 }
+func Register(up, down MigrationFn) error {
 	return internalRegister(up, down, 2)
 }
 
 // MustRegister acts like Register but panics on errors.
-func MustRegister(up, down MigrationFunc) {
+func MustRegister(up, down MigrationFn) {
 	if err := internalRegister(up, down, 2); err != nil {
 		panic(err)
 	}
@@ -79,29 +77,29 @@ func RegisteredMigrations() []Migration {
 	return ret
 }
 
-// SetDatabase sets database for global migrate.
-func SetDatabase(db *mongo.Database) {
-	globalMigrate.db = db
-}
+// // SetDatabase sets database for global migrate.
+// func SetDatabase(db *mongo.Database) {
+// 	globalMigrate.db = db
+// }
 
 // SetMigrationsCollection changes default collection name for migrations history.
 func SetMigrationsCollection(name string) {
 	globalMigrate.SetMigrationsCollection(name)
 }
 
-// Version returns current database version.
-func Version() (uint64, string, error) {
-	return globalMigrate.Version()
+// CurrentVersion returns current database version.
+func CurrentVersion() (uint64, string, error) {
+	return globalMigrate.CurrentVersion()
 }
 
 // Up performs "up" migration using registered migrations.
-// Detailed description available in Migrate.Up().
+// Detailed description available in migrator.Up().
 func Up(n int) error {
 	return globalMigrate.Up(n)
 }
 
 // Down performs "down" migration using registered migrations.
-// Detailed description available in Migrate.Down().
+// Detailed description available in migrator.Down().
 func Down(n int) error {
 	return globalMigrate.Down(n)
 }

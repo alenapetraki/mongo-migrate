@@ -2,38 +2,39 @@ package migrate
 
 import (
 	"sort"
+	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// MigrationFunc used to define actions to be performed for a migration.
-type MigrationFunc func(db *mongo.Database) error
+type Version struct {
+	ID          uint      `bson:"_id"`
+	Description string    `bson:"description,omitempty"`
+	Timestamp   time.Time `bson:"timestamp"`
+}
+
+// MigrationFn used to define actions to be performed during migration.
+type MigrationFn func(db *mongo.Database) error
 
 // Migration represents single database migration.
-// Migration contains:
-//
-// - version: migration version, must be unique in migration list
-//
-// - description: text description of migration
-//
-// - up: callback which will be called in "up" migration process
-//
-// - down: callback which will be called in "down" migration process for reverting changes
 type Migration struct {
-	Version     uint64
-	Description string
-	Up          MigrationFunc
-	Down        MigrationFunc
+	Version
+	Up   MigrationFn
+	Down MigrationFn
 }
 
-func migrationSort(migrations []Migration) {
-	sort.Slice(migrations, func(i, j int) bool {
-		return migrations[i].Version < migrations[j].Version
-	})
+type Migrations []Migration
+
+func (ms Migrations) Sort(direction ...int) {
+	if len(direction) > 0 && direction[0] == -1 {
+		sort.Slice(ms, func(i, j int) bool { return ms[i].Version > ms[j].Version })
+		return
+	}
+	sort.Slice(ms, func(i, j int) bool { return ms[i].Version < ms[j].Version })
 }
 
-func hasVersion(migrations []Migration, version uint64) bool {
-	for _, m := range migrations {
+func (ms Migrations) ContainsVersion(version uint) bool {
+	for _, m := range ms {
 		if m.Version == version {
 			return true
 		}

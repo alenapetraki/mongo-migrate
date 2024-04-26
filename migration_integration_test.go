@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package migrate
@@ -91,7 +92,7 @@ func TestSetGetVersion(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
-	version, description, err := migrate.Version()
+	version, description, err := migrate.CurrentVersion()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return
@@ -105,7 +106,7 @@ func TestSetGetVersion(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
-	version, description, err = migrate.Version()
+	version, description, err = migrate.CurrentVersion()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return
@@ -119,7 +120,7 @@ func TestSetGetVersion(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
-	version, description, err = migrate.Version()
+	version, description, err = migrate.CurrentVersion()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return
@@ -133,7 +134,7 @@ func TestSetGetVersion(t *testing.T) {
 func TestVersionBeforeSet(t *testing.T) {
 	defer cleanup(db)
 	migrate := NewMigrate(db)
-	version, _, err := migrate.Version()
+	version, _, err := migrate.CurrentVersion()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return
@@ -171,7 +172,7 @@ func TestUpMigrations(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
-	version, description, err := migrate.Version()
+	version, description, err := migrate.CurrentVersion()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return
@@ -270,7 +271,7 @@ func TestDownMigrations(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
-	version, _, err := migrate.Version()
+	version, _, err := migrate.CurrentVersion()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return
@@ -349,7 +350,7 @@ func TestPartialUpMigrations(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
-	version, description, err := migrate.Version()
+	version, description, err := migrate.CurrentVersion()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return
@@ -471,7 +472,7 @@ func TestPartialDownMigrations(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
-	version, description, err := migrate.Version()
+	version, description, err := migrate.CurrentVersion()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return
@@ -499,7 +500,7 @@ func TestUpMigrationWithErrors(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
-	version, _, err := migrate.Version()
+	version, _, err := migrate.CurrentVersion()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return
@@ -532,7 +533,7 @@ func TestDownMigrationWithErrors(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
-	version, _, err := migrate.Version()
+	version, _, err := migrate.CurrentVersion()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return
@@ -564,7 +565,7 @@ func TestMultipleUpMigration(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
-	version, description, err := migrate.Version()
+	version, description, err := migrate.CurrentVersion()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return
@@ -608,7 +609,7 @@ func TestMultipleDownMigration(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
-	version, _, err := migrate.Version()
+	version, _, err := migrate.CurrentVersion()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return

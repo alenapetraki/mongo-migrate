@@ -23,7 +23,7 @@ func TestGlobalMigrateSetGet(t *testing.T) {
 		t.Errorf("Unexpected non-equal dbs")
 	}
 	SetMigrationsCollection("test")
-	if globalMigrate.migrationsCollection != "test" {
+	if globalMigrate.versions != "test" {
 		t.Errorf("Unexpected non-equal collections")
 	}
 }
