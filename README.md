@@ -1,5 +1,5 @@
 # Versioned migrations for MongoDB
-[![Build Status](https://travis-ci.org/xakep666/mongo-migrate.svg?branch=master)](https://travis-ci.org/xakep666/mongo-migrate)
+[![Build Status](https://github.com/xakep666/mongo-migrate/actions/workflows/testing.yml/badge.svg)](https://travis-ci.org/xakep666/mongo-migrate)
 [![codecov](https://codecov.io/gh/xakep666/mongo-migrate/branch/master/graph/badge.svg)](https://codecov.io/gh/xakep666/mongo-migrate)
 [![Go Report Card](https://goreportcard.com/badge/github.com/xakep666/mongo-migrate)](https://goreportcard.com/report/github.com/xakep666/mongo-migrate)
 [![GoDoc](https://godoc.org/github.com/xakep666/mongo-migrate?status.svg)](https://godoc.org/github.com/xakep666/mongo-migrate)
@@ -20,7 +20,7 @@ Table of Contents
 * [License](#license)
 
 ## Prerequisites
-* Golang >= 1.10 or Vgo
+* Golang >= 1.22
 
 ## Installation
 ```bash
@@ -39,30 +39,31 @@ File name should be like `<version>_<description>.go`.
 package migrations
 
 import (
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	migrate "github.com/xakep666/mongo-migrate"
+  "context"
+
+  "go.mongodb.org/mongo-driver/bson"
+  "go.mongodb.org/mongo-driver/mongo"
+  "go.mongodb.org/mongo-driver/mongo/options"
+  migrate "github.com/xakep666/mongo-migrate"
 )
 
 func init() {
-	migrate.Register(func(db *mongo.Database) error {
-		opt := options.Index().SetName("my-index")
-		keys := bson.D{{Key: "my-key", Value: 1}}
-		model := mongo.IndexModel{Keys: keys, Options: opt}
-		_, err := db.Collection("my-coll").Indexes().CreateOne(context.TODO(), model)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}, func(db *mongo.Database) error {
-		_, err := db.Collection("my-coll").Indexes().DropOne(context.TODO(), "my-index")
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+  migrate.MustRegister(func(ctx context.Context, db *mongo.Database) error {
+    opt := options.Index().SetName("my-index")
+    keys := bson.D{{Key: "my-key", Value: 1}}
+    model := mongo.IndexModel{Keys: keys, Options: opt}
+    _, err := db.Collection("my-coll").Indexes().CreateOne(ctx, model)
+    if err != nil {
+      return err
+    }
+    return nil
+  }, func(ctx context.Context, db *mongo.Database) error {
+    _, err := db.Collection("my-coll").Indexes().DropOne(ctx, "my-index")
+    if err != nil {
+      return err
+    }
+    return nil
+  })
 }
 ```
 
@@ -88,7 +89,7 @@ func MongoConnect(host, user, password, database string) (*mongo.Database, error
 	}
 	db := client.Database(database)
 	migrate.SetDatabase(db)
-	if err := migrate.Up(migrate.AllAvailable); err != nil {
+	if err := migrate.Up(ctx, migrate.AllAvailable); err != nil {
 		return nil, err
 	}
 	return db, nil
@@ -101,13 +102,9 @@ func MongoConnect(host, user, password, database string) (*mongo.Database, error
 func MongoConnect(host, user, password, database string) (*mongo.Database, error) {
 	uri := fmt.Sprintf("mongodb://%s:%s@%s:27017", user, password, host)
 	opt := options.Client().ApplyURI(uri)
-	client, err := mongo.NewClient(opt)
-	if err != nil {
-		return nil, err
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	err = client.Connect(ctx)
+	err = mongo.Connect(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -115,26 +112,26 @@ func MongoConnect(host, user, password, database string) (*mongo.Database, error
 	m := migrate.NewMigrate(db, migrate.Migration{
 		Version: 1,
 		Description: "add my-index",
-		Up: func(db *mongo.Database) error {
+		Up: func(ctx context.Context, db *mongo.Database) error {
 			opt := options.Index().SetName("my-index")
 			keys := bson.D{{"my-key", 1}}
 			model := mongo.IndexModel{Keys: keys, Options: opt}
-			_, err := db.Collection("my-coll").Indexes().CreateOne(context.TODO(), model)
+			_, err := db.Collection("my-coll").Indexes().CreateOne(ctx, model)
 			if err != nil {
 				return err
 			}
 
 			return nil
 		},
-		Down: func(db *mongo.Database) error {
-			_, err := db.Collection("my-coll").Indexes().DropOne(context.TODO(), "my-index")
+		Down: func(ctx context.Context, db *mongo.Database) error {
+			_, err := db.Collection("my-coll").Indexes().DropOne(ctx, "my-index")
 			if err != nil {
 				return err
 			}
 			return nil
 		},
 	})
-	if err := m.Up(migrate.AllAvailable); err != nil {
+	if err := m.Up(ctx, migrate.AllAvailable); err != nil {
 		return nil, err
 	}
 	return db, nil
